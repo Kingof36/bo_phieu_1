@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ Thống Bình Chọn</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            min-height: 100vh;
+            color: #333;
+        }
+        .main-container {
+            background: rgba(255, 255, 255, 0.92);
+            border-radius: 15px;
+            padding: 30px;
+            margin-top: 50px;
+            margin-bottom: 50px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+        .item-card {
+            border: 2px solid #dee2e6;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            background: #fff;
+            transition: all 0.3s;
+            cursor: pointer;
+            height: 100%;
+        }
+        .item-card.selected {
+            border-color: #0d6efd;
+            background-color: #f0f8ff;
+            box-shadow: 0 0 10px rgba(13,110,253,0.3);
+        }
+        .item-img {
+            width: 100%;
+            height: 160px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        .rank-item {
+            display: flex;
+            align-items: center;
+            background: #fff;
+            border-radius: 8px;
+            padding: 10px 15px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .rank-img {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 6px;
+            margin-right: 15px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-9 main-container">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 id="pageTitle" class="h3 fw-bold text-primary mb-0">Hệ Thống Bình Chọn</h1>
+                <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#adminModal">⚙️ Quản Trị Viên</button>
+            </div>
+
+            <div id="alertBox"></div>
+
+            <!-- Form Nhập Thông Tin Người Dùng -->
+            <div class="card mb-4 border-primary">
+                <div class="card-body bg-light rounded">
+                    <h5 class="card-title text-primary">Bước 1: Nhập thông tin của bạn</h5>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Họ và Tên:</label>
+                            <input type="text" id="userName" class="form-control" placeholder="Nhập họ tên...">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Lớp:</label>
+                            <input type="text" id="userClass" class="form-control" placeholder="Nhập tên lớp...">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Danh Sách Bình Chọn -->
+            <div class="mb-4">
+                <h5 class="text-primary mb-3">Bước 2: Chọn đối tượng bạn yêu thích (Nhấn chọn)</h5>
+                <div id="votingItemsContainer" class="row g-3">
+                    <!-- Được render tự động qua JS -->
+                </div>
+                <div class="text-center mt-4">
+                    <button class="btn btn-primary btn-lg px-5" onclick="submitVote()">Xác Nhận Bình Chọn</button>
+                </div>
+            </div>
+
+            <hr class="my-5">
+
+            <!-- Bảng Tổng Kết Kết Quả -->
+            <div>
+                <h3 class="text-center fw-bold mb-4">🏆 Bảng Tổng Kết Kết Quả Bình Chọn</h3>
+                <div id="leaderboardContainer">
+                    <!-- Được render tự động qua JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Quản Trị Viên (Admin) -->
+<div class="modal fade" id="adminModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Bảng Điều Khiển Quản Trị Viên</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="adminLoginSection">
+                    <div class="mb-3">
+                        <label class="form-label">Mật khẩu Admin:</label>
+                        <input type="password" id="adminPass" class="form-control" placeholder="Nhập mật khẩu (mặc định: admin123)">
+                    </div>
+                    <button class="btn btn-success" onclick="checkAdmin()">Đăng Nhập</button>
+                </div>
+
+                <div id="adminPanelContent" style="display:none;">
+                    <div class="mb-3">
+                        <label class="form-label">Tiêu đề bình chọn:</label>
+                        <input type="text" id="cfgTitle" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Link ảnh nền trang web (URL):</label>
+                        <input type="text" id="cfgBg" class="form-control" placeholder="https://...">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Số lần mỗi người dùng được phép bình chọn:</label>
+                        <input type="number" id="cfgMaxVotes" class="form-control" min="1" value="1">
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="mb-0">Danh sách đối tượng bình chọn (Thứ / Con / Vật / Người)</h6>
+                        <button class="btn btn-sm btn-outline-primary" onclick="addItemRow()">+ Thêm đối tượng</button>
+                    </div>
+                    <div id="adminItemsList" style="max-height: 300px; overflow-y: auto;" class="mb-3">
+                        <!-- Thêm động -->
+                    </div>
+                    <button class="btn btn-primary w-100" onclick="saveAdminConfig()">Lưu Cấu Hình & Cập Nhật Web</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // ⚠️ THAY LINK GOOGLE APPS SCRIPT CỦA BẠN VÀO ĐÂY ⚠️
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw.../exec";
+
+    let currentConfig = {};
+    let selectedTargetId = null;
+
+    document.addEventListener("DOMContentLoaded", function() {
+        loadData();
+    });
+
+    function showAlert(message, type = "success") {
+        const alertBox = document.getElementById("alertBox");
+        alertBox.innerHTML = `<div class="alert alert-${type} alert-dismissible fade show" role="alert">
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>`;
+    }
+
+    function loadData() {
+        fetch(WEB_APP_URL + "?action=getConfig")
+        .then(res => res.json())
+        .then(config => {
+            currentConfig = config;
+            document.getElementById("pageTitle").innerText = config.title;
+            if(config.bgImage) {
+                document.body.style.backgroundImage = `url('${config.bgImage}')`;
+            }
+            renderVotingItems(config.items);
+            loadLeaderboard();
+        }).catch(err => {
+            console.error(err);
+            showAlert("Không thể tải cấu hình từ Google Sheets!", "danger");
+        });
+    }
+
+    function renderVotingItems(items) {
+        const container = document.getElementById("votingItemsContainer");
+        container.innerHTML = "";
+        if(!items || items.length === 0) {
+            container.innerHTML = "<p class='text-muted text-center'>Chưa có đối tượng nào được thiết lập bởi quản trị viên.</p>";
+            return;
+        }
+        items.forEach(item => {
+            container.innerHTML += `
+                <div class="col-md-4 col-sm-6">
+                    <div class="item-card" id="card-${item.id}" onclick="selectItem('${item.id}')">
+                        <img src="${item.image || 'https://via.placeholder.com/150'}" class="item-img" alt="${item.name}">
+                        <h5 class="fw-bold text-dark mt-2">${item.name}</h5>
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    function selectItem(id) {
+        selectedTargetId = id;
+        document.querySelectorAll('.item-card').forEach(card => card.classList.remove('selected'));
+        document.getElementById(`card-${id}`).classList.add('selected');
+    }
+
+    function submitVote() {
+        const name = document.getElementById("userName").value.trim();
+        const cls = document.getElementById("userClass").value.trim();
+
+        if(!name || !cls) {
+            showAlert("Vui lòng nhập đầy đủ Tên và Lớp trước khi bình chọn!", "warning");
+            return;
+        }
+        if(!selectedTargetId) {
+            showAlert("Vui lòng chọn một đối tượng để bầu chọn!", "warning");
+            return;
+        }
+
+        showAlert("Đang gửi phiếu bầu...", "info");
+
+        fetch(`${WEB_APP_URL}?action=vote&name=${encodeURIComponent(name)}&cls=${encodeURIComponent(cls)}&targetId=${encodeURIComponent(selectedTargetId)}`)
+        .then(res => res.json())
+        .then(res => {
+            if(res.status === "success") {
+                showAlert(res.message, "success");
+                loadLeaderboard();
+            } else {
+                showAlert(res.message, "danger");
+            }
+        }).catch(err => {
+            showAlert("Lỗi kết nối đến máy chủ!", "danger");
+        });
+    }
+
+    function loadLeaderboard() {
+        fetch(WEB_APP_URL + "?action=getLeaderboard")
+        .then(res => res.json())
+        .then(list => {
+            const container = document.getElementById("leaderboardContainer");
+            container.innerHTML = "";
+            
+            if(!list || list.length === 0) {
+                container.innerHTML = "<p class='text-muted text-center'>Chưa có dữ liệu tổng kết.</p>";
+                return;
+            }
+
+            list.forEach((item, index) => {
+                container.innerHTML += `
+                    <div class="rank-item">
+                        <div class="fw-bold fs-4 me-3 text-secondary" style="width: 30px;">#${index + 1}</div>
+                        <img src="${item.image || 'https://via.placeholder.com/150'}" class="rank-img" alt="${item.name}">
+                        <div class="flex-grow-1">
+                            <h5 class="mb-1 fw-bold">${item.name}</h5>
+                            <span class="badge bg-primary">${item.votes} phiếu bầu</span>
+                        </div>
+                    </div>
+                `;
+            });
+        });
+    }
+
+    // Phần Quản Trị Viên
+    function checkAdmin() {
+        const pass = document.getElementById("adminPass").value;
+        if(pass === "admin123") { // Bạn có thể đổi mật khẩu tại đây
+            document.getElementById("adminLoginSection").style.display = "none";
+            document.getElementById("adminPanelContent").style.display = "block";
+            populateAdminForm();
+        } else {
+            alert("Mật khẩu không đúng!");
+        }
+    }
+
+    function populateAdminForm() {
+        document.getElementById("cfgTitle").value = currentConfig.title || "";
+        document.getElementById("cfgBg").value = currentConfig.bgImage || "";
+        document.getElementById("cfgMaxVotes").value = currentConfig.maxVotesPerUser || 1;
+        
+        const listContainer = document.getElementById("adminItemsList");
+        listContainer.innerHTML = "";
+        if(currentConfig.items) {
+            currentConfig.items.forEach((item, index) => {
+                addAdminItemRow(item.id, item.name, item.image);
+            });
+        }
+    }
+
+    function addItemRow() {
+        const uniqueId = "item_" + Date.now();
+        addAdminItemRow(uniqueId, "", "");
+    }
+
+    function addAdminItemRow(id, name, image) {
+        const listContainer = document.getElementById("adminItemsList");
+        const div = document.createElement("div");
+        div.className = "input-group mb-2 item-row";
+        div.innerHTML = `
+            <input type="text" class="form-control item-id" value="${id}" hidden>
+            <input type="text" class="form-control item-name" placeholder="Tên đối tượng" value="${name}">
+            <input type="text" class="form-control item-img-url" placeholder="Link ảnh (URL)" value="${image}">
+            <button class="btn btn-outline-danger" type="button" onclick="this.parentElement.remove()">X</button>
+        `;
+        listContainer.appendChild(div);
+    }
+
+    function saveAdminConfig() {
+        const newTitle = document.getElementById("cfgTitle").value;
+        const newBg = document.getElementById("cfgBg").value;
+        const newMaxVotes = parseInt(document.getElementById("cfgMaxVotes").value) || 1;
+        
+        const rows = document.querySelectorAll(".item-row");
+        const newItems = [];
+        rows.forEach(row => {
+            const id = row.querySelector(".item-id").value;
+            const name = row.querySelector(".item-name").value;
+            const image = row.querySelector(".item-img-url").value;
+            if(name) {
+                newItems.push({ id, name, image });
+            }
+        });
+
+        const newConfig = {
+            title: newTitle,
+            bgImage: newBg,
+            maxVotesPerUser: newMaxVotes,
+            items: newItems
+        };
+
+        showAlert("Đang lưu cấu hình...", "info");
+
+        fetch(WEB_APP_URL, {
+            method: "POST",
+            body: JSON.stringify({ action: "saveConfig", config: newConfig })
+        })
+        .then(res => res.json())
+        .then(res => {
+            if(res.status === "success") {
+                showAlert("Đã lưu cấu hình thành công! Hãy tải lại trang.", "success");
+                loadData();
+                var modal = bootstrap.Modal.getInstance(document.getElementById('adminModal'));
+                modal.hide();
+            } else {
+                showAlert("Lỗi: " + res.message, "danger");
+            }
+        }).catch(err => {
+            showAlert("Lỗi kết nối khi lưu cấu hình!", "danger");
+        });
+    }
+</script>
+
+</body>
+</html>
